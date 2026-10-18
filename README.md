@@ -9,14 +9,14 @@
 | 講者 | 黃信德 先生（中央研究院資訊科學研究所 前博士後研究員）、陳雅湞 副教授（中原大學） |
 | 活動 | 桃園武陵高中音樂資優班 AI 聲音軟體升學增能特殊實務操作體驗 |
 
-- **課堂網頁**（手機、平板、電腦都能用）：<https://benevolent-pithivier-3ffb14.netlify.app/>
+- **降噪網頁版**（手機、平板、電腦都能用）：<https://benevolent-pithivier-3ffb14.netlify.app/>
 - **Colab notebook**：[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tehan0530/CYCU-fastenhancer-course/blob/main/notebook/FastEnhancer_handson.ipynb)（需要 Google 帳號）
 - **投影片（PDF）**：[slides/FastEnhancer_course_slides.pdf](slides/FastEnhancer_course_slides.pdf)
 - **沒有 Google 帳號？** 看 [附結果版](https://colab.research.google.com/github/tehan0530/CYCU-fastenhancer-course/blob/main/notebook/FastEnhancer_handson_with_outputs.ipynb)：每一格的圖表、數字、聲音都已存在裡面，打開就能看
 
 | 資料夾 | 內容 |
 |---|---|
-| `web/` | 課堂網頁：模型以 onnxruntime-web 在手機／筆電瀏覽器裡即時執行（純靜態，可直接部署） |
+| `web/` | 降噪網頁版：模型以 onnxruntime-web 在手機／筆電瀏覽器裡即時執行（純靜態，可直接部署） |
 | `notebook/` | Colab notebook：從安裝到降噪，每個 cell 按 ▶ 即可；`_with_outputs` 是附結果版 |
 | `slides/` | 課堂投影片 PDF |
 | `tools/` | `serve.py` 在自己電腦上跑網頁 |
