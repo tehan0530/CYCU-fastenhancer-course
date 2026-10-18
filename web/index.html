@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FastEnhancer 降噪實驗室</title>
+<meta name="description" content="在手機或筆電上即時執行 FastEnhancer 串流語音降噪模型">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one column on phones; on wide screens the controls sit beside the spectrograms. */
+:root {
+  --bg: #eef3f6;
+  --surface: #ffffff;
+  --ink: #13202b;
+  --muted: #566775;
+  --line: #d3dde4;
+  --accent: #1d6fb8;
+  --accent-ink: #ffffff;
+  --noisy: #b8521a;
+  --clean: #0b8574;
+  --ok: #187a44;
+  --warn: #a76a00;
+  --bad: #b3261e;
+  --scope: #08080f;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c131a; --surface: #141f29; --ink: #e4ecf2; --muted: #93a4b2; --line: #24333f;
+    --accent: #6cb0ec; --accent-ink: #08121b; --noisy: #f08a4b; --clean: #3cc9b3;
+    --ok: #5fd08f; --warn: #f0b84a; --bad: #ff8a80; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c131a; --surface: #141f29; --ink: #e4ecf2; --muted: #93a4b2; --line: #24333f;
+  --accent: #6cb0ec; --accent-ink: #08121b; --noisy: #f08a4b; --clean: #3cc9b3;
+  --ok: #5fd08f; --warn: #f0b84a; --bad: #ff8a80; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+}
+[hidden] { display: none !important; }
+.wrap {
+  max-width: 1040px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header { padding-block: 28px 12px; }
+.eyebrow { font-size: 13px; letter-spacing: .08em; color: var(--muted); font-weight: 500; }
+h1 { margin: 2px 0 6px; font-size: clamp(26px, 6vw, 40px); font-weight: 900; line-height: 1.15; text-wrap: balance; }
+h1 .wave { color: var(--accent); }
+.lede { margin: 0; color: var(--muted); max-width: 62ch; }
+h2 { font-size: 18px; margin: 0; font-weight: 700; }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+/* model bar */
+.modelbar {
+  margin-block: 16px; padding: 14px 16px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 12px;
+  display: grid; gap: 10px;
+}
+.modelrow { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+label.field { display: flex; gap: 8px; align-items: center; font-weight: 500; }
+select, button, input[type=file]::file-selector-button {
+  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 12px; min-height: 40px;
+}
+select { padding-right: 8px; }
+button { cursor: pointer; }
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.speed { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; color: var(--muted); font-size: 14px; }
+.speed b { color: var(--ink); font-size: 18px; }
+.chip-status {
+  font-size: 13px; font-weight: 700; padding: 2px 10px; border-radius: 999px;
+  border: 1px solid currentColor;
+}
+.chip-status[data-kind=ok] { color: var(--ok); }
+.chip-status[data-kind=warn] { color: var(--warn); }
+.chip-status[data-kind=bad] { color: var(--bad); }
+.chip-status[data-kind=loading] { color: var(--muted); }
+#modelInfo { font-size: 13px; color: var(--muted); }
+
+/* tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+[role=tab] {
+  border: 0; background: none; border-radius: 0; padding: 10px 14px; min-height: 44px;
+  color: var(--muted); font-weight: 700; border-bottom: 3px solid transparent; margin-bottom: -1px;
+}
+[role=tab][aria-selected=true] { color: var(--ink); border-bottom-color: var(--accent); }
+[role=tabpanel] { padding-block: 18px 8px; }
+
+.panel { display: grid; gap: 18px; grid-template-columns: 1fr; }
+@media (min-width: 860px) { .panel { grid-template-columns: 300px minmax(0, 1fr); align-items: start; } }
+.controls { display: grid; gap: 14px; }
+.primary {
+  background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
+  font-weight: 700; font-size: 18px; min-height: 52px; border-radius: 10px;
+}
+.primary[data-on] { background: var(--surface); color: var(--bad); border-color: var(--bad); }
+.toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 500; }
+.toggle input { width: 52px; height: 30px; accent-color: var(--clean); }
+.range { display: grid; gap: 4px; }
+.range input { width: 100%; accent-color: var(--clean); }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.alert { font-size: 14px; color: var(--bad); margin: 0; }
+
+.scopes { display: grid; gap: 12px; min-width: 0; }
+.scope { display: grid; gap: 4px; min-width: 0; }
+.scope-head { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; font-weight: 700; }
+.scope-head small { font-weight: 400; color: var(--muted); }
+.tag-noisy { color: var(--noisy); }
+.tag-enh { color: var(--clean); }
+.tag-clean { color: var(--muted); }
+canvas { width: 100%; max-width: 100%; height: auto; aspect-ratio: 5 / 1; display: block; background: var(--scope); border-radius: 8px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.stat span { display: block; font-size: 12px; color: var(--muted); }
+.stat b { font-family: var(--font-data); font-size: 20px; font-variant-numeric: tabular-nums; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: grid; text-align: left; line-height: 1.3; padding: 6px 12px; }
+.chip small { color: var(--muted); font-size: 12px; }
+.chip[aria-pressed=true] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.or { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+input[type=file] { max-width: 100%; font-size: 14px; color: var(--muted); }
+progress { width: 100%; height: 6px; accent-color: var(--accent); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; min-height: 44px; padding: 6px 14px; background: var(--surface); font-weight: 700; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed=true][data-ab=noisy] { background: var(--noisy); color: var(--surface); }
+.seg button[aria-pressed=true][data-ab=enhanced] { background: var(--clean); color: var(--surface); }
+.seg button[aria-pressed=true][data-ab=clean] { background: var(--muted); color: var(--surface); }
+.playrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.playrow .primary { min-width: 96px; }
+a { color: var(--accent); }
+a.button { display: inline-flex; align-items: center; min-height: 40px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; text-decoration: none; }
+
+footer { padding-block: 24px 40px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); margin-top: 24px; }
+footer p { margin: 4px 0; max-width: 80ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">串流神經語音增強 · 手作課</div>
+    <h1>FastEnhancer <span class="wave">降噪實驗室</span></h1>
+    <p class="lede">模型直接在你的手機或筆電上執行，聲音不會上傳到任何伺服器。每次只處理十幾毫秒的聲音，所以可以一邊講一邊降噪。</p>
+  </header>
+
+  <section class="modelbar" aria-label="模型">
+    <div class="modelrow">
+      <label class="field" for="model">模型 <select id="model"></select></label>
+      <span id="speedChip" class="chip-status" data-kind="loading">載入中…</span>
+    </div>
+    <div class="speed">
+      <span>每 <b class="num" id="frameLen">–</b> ms 的聲音，運算 <b class="num" id="msPerFrame">–</b> ms</span>
+      <span>RTF <b class="num" id="rtf">–</b></span>
+    </div>
+    <div id="modelInfo"></div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-compare" data-tab="compare" aria-selected="true" aria-controls="panel-compare">範例與錄音比較</button>
+    <button role="tab" id="tab-live" data-tab="live" aria-selected="false" aria-controls="panel-live">即時麥克風</button>
+  </div>
+
+  <section role="tabpanel" id="panel-compare" aria-labelledby="tab-compare">
+    <div class="panel">
+      <div class="controls">
+        <h2>1. 選一段聲音</h2>
+        <div class="chips" id="samples"></div>
+        <div class="or">
+          <button type="button" id="recBtn">錄 5 秒</button>
+          <input type="file" id="fileIn" accept="audio/*" aria-label="上傳音檔">
+        </div>
+        <p class="note">範例：英文語音混入真實環境噪音。SNR 越低越吵，0 dB 代表噪音和人聲一樣大聲。</p>
+        <h2>2. 切換著聽</h2>
+        <div class="playrow">
+          <button type="button" class="primary" id="playBtn">播放</button>
+          <div class="seg" role="group" aria-label="播放版本">
+            <button type="button" data-ab="noisy" aria-pressed="true">原始</button>
+            <button type="button" data-ab="enhanced" aria-pressed="false">降噪後</button>
+            <button type="button" data-ab="clean" id="abClean" aria-pressed="false">乾淨答案</button>
+          </div>
+        </div>
+        <p class="note">三個版本同步播放，按鈕只切換你聽到哪一個，可以邊播邊切。</p>
+        <a class="button" id="download" href="#">下載降噪後音檔</a>
+        <p class="alert" id="compareMsg" role="status"></p>
+      </div>
+      <div class="scopes" id="results" hidden>
+        <progress id="progress" max="1" value="0"></progress>
+        <p class="note" id="offlineStats"></p>
+        <div class="scope">
+          <div class="scope-head"><span class="tag-noisy">原始（有噪音）· <span id="srcLabel"></span></span><small id="cmpAxis"></small></div>
+          <canvas id="specNoisy" width="800" height="160"></canvas>
+        </div>
+        <div class="scope">
+          <div class="scope-head"><span class="tag-enh">降噪後</span></div>
+          <canvas id="specEnh" width="800" height="160"></canvas>
+        </div>
+        <div class="scope" id="cleanRow">
+          <div class="scope-head"><span class="tag-clean">乾淨答案（混噪音之前）</span></div>
+          <canvas id="specClean" width="800" height="160"></canvas>
+        </div>
+        <p class="note">頻譜圖：橫軸是時間，縱軸是頻率（下低上高），越亮代表那個頻率越大聲。</p>
+      </div>
+    </div>
+  </section>
+
+  <section role="tabpanel" id="panel-live" aria-labelledby="tab-live" hidden>
+    <div class="panel">
+      <div class="controls">
+        <button type="button" class="primary" id="liveBtn">開始</button>
+        <p class="alert" id="liveHint" hidden></p>
+        <label class="toggle" for="enhOn">降噪 <input type="checkbox" id="enhOn" checked></label>
+        <div class="range">
+          <label class="toggle" for="strength">降噪強度 <span class="num" id="strengthVal">100%</span></label>
+          <input type="range" id="strength" min="0" max="100" value="100">
+        </div>
+        <label class="toggle" for="monitor">從喇叭播出 <input type="checkbox" id="monitor"></label>
+        <label class="toggle" for="aec">瀏覽器回音消除（AEC） <input type="checkbox" id="aec"></label>
+        <p class="note">沒戴耳機時打開喇叭，麥克風會收到自己播出的聲音而產生回授。可以試著打開回音消除；或看下面的頻譜圖就好，或改用「錄 5 秒」。回音消除預設關閉，這樣聽到的差異都來自 FastEnhancer。</p>
+      </div>
+      <div class="scopes">
+        <div class="scope">
+          <div class="scope-head"><span class="tag-noisy">麥克風收到的</span><small id="liveAxis"></small></div>
+          <canvas id="liveIn" width="800" height="160"></canvas>
+        </div>
+        <div class="scope">
+          <div class="scope-head"><span class="tag-enh">降噪後</span></div>
+          <canvas id="liveOut" width="800" height="160"></canvas>
+        </div>
+        <div class="stats">
+          <div class="stat"><span>模型延遲（2 幀）</span><b id="latAlgo">–</b> ms</div>
+          <div class="stat"><span>緩衝</span><b id="latBuf">–</b> ms</div>
+          <div class="stat"><span>裝置音訊</span><b id="latDev">–</b> ms</div>
+          <div class="stat"><span>估計總延遲</span><b id="latTotal">–</b> ms</div>
+          <div class="stat"><span>斷音次數</span><b id="glitches">0</b></div>
+        </div>
+        <p class="note">試試看：拍手、敲鍵盤、開風扇、放音樂、兩個人同時講話。哪些噪音消得掉？哪些消不掉？</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>模型：<a href="https://github.com/aask1357/fastenhancer" target="_blank" rel="noopener">FastEnhancer</a>（Ahn et al., 2025, MIT License）官方 ONNX 權重，以 <a href="https://onnxruntime.ai/" target="_blank" rel="noopener">ONNX Runtime Web</a> 在瀏覽器執行。</p>
+    <p>範例音檔：VCTK / VoiceBank 語音（CC BY 4.0）混合 DEMAND 環境噪音（CC BY-SA 3.0）。</p>
+  </footer>
+</div>
+<script src="ort/ort.wasm.min.js"></script>
+<script src="dsp.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

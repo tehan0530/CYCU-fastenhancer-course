@@ -1,0 +1,258 @@
+[
+ {
+  "id": "dns16k_t",
+  "file": "models/dns16k_t.onnx",
+  "size": "Tiny",
+  "family": "DNS-Challenge 訓練 · 16 kHz",
+  "sr": 16000,
+  "inputs": {
+   "wav_in": [
+    1,
+    256
+   ],
+   "cache_in_0": [
+    1,
+    256
+   ],
+   "cache_in_1": [
+    1,
+    256
+   ],
+   "cache_in_2": [
+    1,
+    16,
+    20
+   ],
+   "cache_in_3": [
+    1,
+    16,
+    20
+   ]
+  },
+  "bytes": 125233,
+  "short": "DNS 16 kHz"
+ },
+ {
+  "id": "dns16k_b",
+  "file": "models/dns16k_b.onnx",
+  "size": "Base",
+  "family": "DNS-Challenge 訓練 · 16 kHz",
+  "sr": 16000,
+  "inputs": {
+   "wav_in": [
+    1,
+    256
+   ],
+   "cache_in_0": [
+    1,
+    256
+   ],
+   "cache_in_1": [
+    1,
+    256
+   ],
+   "cache_in_2": [
+    1,
+    24,
+    36
+   ],
+   "cache_in_3": [
+    1,
+    24,
+    36
+   ],
+   "cache_in_4": [
+    1,
+    24,
+    36
+   ]
+  },
+  "bytes": 413220,
+  "short": "DNS 16 kHz"
+ },
+ {
+  "id": "dns16k_s",
+  "file": "models/dns16k_s.onnx",
+  "size": "Small",
+  "family": "DNS-Challenge 訓練 · 16 kHz",
+  "sr": 16000,
+  "inputs": {
+   "wav_in": [
+    1,
+    256
+   ],
+   "cache_in_0": [
+    1,
+    256
+   ],
+   "cache_in_1": [
+    1,
+    256
+   ],
+   "cache_in_2": [
+    1,
+    36,
+    48
+   ],
+   "cache_in_3": [
+    1,
+    36,
+    48
+   ],
+   "cache_in_4": [
+    1,
+    36,
+    48
+   ]
+  },
+  "bytes": 832813,
+  "short": "DNS 16 kHz"
+ },
+ {
+  "id": "fb48k_t",
+  "file": "models/fb48k_t.onnx",
+  "size": "Tiny",
+  "family": "全頻帶 · 48 kHz",
+  "sr": 48000,
+  "inputs": {
+   "wav_in": [
+    1,
+    512
+   ],
+   "cache_in_0": [
+    1,
+    512
+   ],
+   "cache_in_1": [
+    1,
+    512
+   ],
+   "cache_in_2": [
+    1,
+    24,
+    20
+   ],
+   "cache_in_3": [
+    1,
+    24,
+    20
+   ]
+  },
+  "bytes": 151147,
+  "short": "全頻帶 48 kHz"
+ },
+ {
+  "id": "fb48k_b",
+  "file": "models/fb48k_b.onnx",
+  "size": "Base",
+  "family": "全頻帶 · 48 kHz",
+  "sr": 48000,
+  "inputs": {
+   "wav_in": [
+    1,
+    512
+   ],
+   "cache_in_0": [
+    1,
+    512
+   ],
+   "cache_in_1": [
+    1,
+    512
+   ],
+   "cache_in_2": [
+    1,
+    36,
+    36
+   ],
+   "cache_in_3": [
+    1,
+    36,
+    36
+   ],
+   "cache_in_4": [
+    1,
+    36,
+    36
+   ]
+  },
+  "bytes": 449559,
+  "short": "全頻帶 48 kHz"
+ },
+ {
+  "id": "fb48k_s",
+  "file": "models/fb48k_s.onnx",
+  "size": "Small",
+  "family": "全頻帶 · 48 kHz",
+  "sr": 48000,
+  "inputs": {
+   "wav_in": [
+    1,
+    512
+   ],
+   "cache_in_0": [
+    1,
+    512
+   ],
+   "cache_in_1": [
+    1,
+    512
+   ],
+   "cache_in_2": [
+    1,
+    48,
+    48
+   ],
+   "cache_in_3": [
+    1,
+    48,
+    48
+   ],
+   "cache_in_4": [
+    1,
+    48,
+    48
+   ]
+  },
+  "bytes": 875885,
+  "short": "全頻帶 48 kHz"
+ },
+ {
+  "id": "vd16k_s",
+  "file": "models/vd16k_s.onnx",
+  "size": "Small",
+  "family": "VoiceBank-DEMAND 訓練 · 16 kHz",
+  "sr": 16000,
+  "inputs": {
+   "wav_in": [
+    1,
+    256
+   ],
+   "cache_in_0": [
+    1,
+    256
+   ],
+   "cache_in_1": [
+    1,
+    256
+   ],
+   "cache_in_2": [
+    1,
+    36,
+    48
+   ],
+   "cache_in_3": [
+    1,
+    36,
+    48
+   ],
+   "cache_in_4": [
+    1,
+    36,
+    48
+   ]
+  },
+  "bytes": 832775,
+  "short": "VoiceBank 16 kHz"
+ }
+]
