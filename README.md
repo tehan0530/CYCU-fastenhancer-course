@@ -10,7 +10,7 @@
 | 地點 | 中原大學教學樓 112 講堂（請自備筆電或平板） |
 | 講者 | 黃信德 先生（中央研究院資訊科學研究所 前博士後研究員）、陳雅湞 副教授（中原大學） |
 
-- **降噪網頁版**（手機、平板、電腦都能用；右上角可切換中文 / EN）：<https://benevolent-pithivier-3ffb14.netlify.app/>
+- **降噪網頁版**（手機、平板、電腦都能用）：<https://benevolent-pithivier-3ffb14.netlify.app/>
 - **Colab notebook**（中英對照）：[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tehan0530/CYCU-fastenhancer-course/blob/main/notebook/FastEnhancer_handson.ipynb)（需要 Google 帳號）
 - **投影片（PDF）**：[中文](slides/FastEnhancer_course_slides.pdf) · [English](slides/FastEnhancer_course_slides_en.pdf)
 - **沒有 Google 帳號？** 看 [附結果版](https://colab.research.google.com/github/tehan0530/CYCU-fastenhancer-course/blob/main/notebook/FastEnhancer_handson_with_outputs.ipynb)：每一格的圖表、數字、聲音都已存在裡面，打開就能看
