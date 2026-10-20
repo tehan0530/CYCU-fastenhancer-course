@@ -5,10 +5,10 @@ ort.env.wasm.wasmPaths = new URL('ort/', location.href).href;
 ort.env.wasm.numThreads = 1; // no SharedArrayBuffer needed, works on every phone
 
 const SAMPLES = [
-  { id: 'cafe', label: '咖啡廳', detail: '0 dB' },
-  { id: 'metro', label: '捷運車廂', detail: '0 dB' },
-  { id: 'station', label: '車站大廳', detail: '5 dB' },
-  { id: 'kitchen', label: '廚房', detail: '0 dB' },
+  { id: 'cafe', detail: '0 dB' },
+  { id: 'metro', detail: '0 dB' },
+  { id: 'station', detail: '5 dB' },
+  { id: 'kitchen', detail: '0 dB' },
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -43,22 +43,74 @@ class Enhancer {
 }
 
 const frameMs = (m) => (m.inputs.wav_in[1] / m.sr) * 1000;
+const modelGroup = (m) => m.id.split('_')[0]; // dns16k / fb48k / vd16k
 
-async function loadModels() {
-  state.models = await (await fetch('models/manifest.json')).json();
+// Model menu, grouped by training data; rebuilt when the language changes.
+function buildModelOptions() {
   const sel = $('model');
-  const families = [...new Set(state.models.map((m) => m.family))];
-  for (const fam of families) {
+  const keep = sel.value;
+  sel.innerHTML = '';
+  for (const grp of [...new Set(state.models.map(modelGroup))]) {
     const g = document.createElement('optgroup');
-    g.label = fam;
-    for (const m of state.models.filter((x) => x.family === fam)) {
+    g.label = t(`fam.${grp}`);
+    for (const m of state.models.filter((x) => modelGroup(x) === grp)) {
       const o = document.createElement('option');
       o.value = m.id;
-      o.textContent = `${m.size} · ${m.short}`;
+      o.textContent = `${m.size} · ${t(`short.${grp}`)}`;
       g.appendChild(o);
     }
     sel.appendChild(g);
   }
+  if (keep) sel.value = keep;
+}
+
+function showModelInfo() {
+  const m = state.meta;
+  if (!m) return;
+  $('modelInfo').textContent = t('model.info', {
+    family: t(`fam.${modelGroup(m)}`), hop: m.inputs.wav_in[1], ms: frameMs(m).toFixed(1), kb: Math.round(m.bytes / 1024),
+  });
+}
+
+function sourceLabel(src) {
+  if (src.sampleId) return LANG === 'zh' ? `${t(`sample.${src.sampleId}`)}（SNR ${src.detail}）` : `${t(`sample.${src.sampleId}`)} (SNR ${src.detail})`;
+  if (src.labelKey) return t(src.labelKey);
+  return src.label;
+}
+
+function buildSampleChips() {
+  const chips = $('samples');
+  chips.innerHTML = '';
+  for (const s of SAMPLES) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.dataset.sample = s.id;
+    b.setAttribute('aria-pressed', String(state.source?.sampleId === s.id));
+    b.innerHTML = `<span>${t(`sample.${s.id}`)}</span><small>SNR ${s.detail}</small>`;
+    b.addEventListener('click', () => loadSample(s.id));
+    chips.appendChild(b);
+  }
+}
+
+// Re-render everything built at run time in the newly chosen language.
+function refreshLanguage() {
+  if (!state.models.length) return;
+  buildModelOptions();
+  buildSampleChips();
+  showModelInfo();
+  if (state.lastMs != null && state.meta) showSpeed(state.lastMs);
+  if (state.offline) $('offlineStats').textContent = t('offline.stats', state.offline);
+  if (state.source) $('srcLabel').textContent = sourceLabel(state.source);
+  $('liveBtn').textContent = t(state.live ? 'btn.stop' : 'btn.start');
+  $('playBtn').textContent = t(play.nodes ? 'btn.stop' : 'btn.play');
+  if (!$('recBtn').disabled) $('recBtn').textContent = t('cmp.rec');
+}
+
+async function loadModels() {
+  state.models = await (await fetch('models/manifest.json')).json();
+  const sel = $('model');
+  buildModelOptions();
   sel.value = 'dns16k_b';
   sel.addEventListener('change', () => selectModel(sel.value));
   await selectModel(sel.value);
@@ -68,7 +120,7 @@ async function selectModel(id) {
   const wasLive = !!state.live;
   if (wasLive) await stopLive();
   const meta = state.models.find((m) => m.id === id);
-  setModelStatus('loading', `載入 ${meta.size} 模型中…`);
+  setModelStatus('loading', t('status.loading', { size: meta.size }));
   try {
     if (!state.sessions.has(id)) {
       const s = await ort.InferenceSession.create(meta.file, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
@@ -76,14 +128,12 @@ async function selectModel(id) {
     }
     state.meta = meta;
     state.session = state.sessions.get(id);
-    const kb = Math.round(meta.bytes / 1024);
-    $('modelInfo').textContent =
-      `${meta.family} · 每次處理 ${meta.inputs.wav_in[1]} 個取樣點 = ${frameMs(meta).toFixed(1)} ms 的聲音 · 模型檔 ${kb} KB`;
+    showModelInfo();
     await benchmark();
     if (wasLive) await startLive();
     if (state.source) await runCompare();
   } catch (err) {
-    setModelStatus('bad', `模型載入失敗：${err.message}`);
+    setModelStatus('bad', t('status.loadFail', { msg: err.message }));
     console.error(err);
   }
 }
@@ -104,9 +154,10 @@ function showSpeed(ms) {
   $('msPerFrame').textContent = ms.toFixed(2);
   $('frameLen').textContent = fm.toFixed(1);
   $('rtf').textContent = rtf.toFixed(3);
-  if (rtf < 0.5) setModelStatus('ok', '輕鬆跟上即時');
-  else if (rtf < 1) setModelStatus('warn', '勉強跟上，可能斷音');
-  else setModelStatus('bad', '跟不上即時，請換小一點的模型');
+  state.lastMs = ms;
+  if (rtf < 0.5) setModelStatus('ok', t('status.ok'));
+  else if (rtf < 1) setModelStatus('warn', t('status.warn'));
+  else setModelStatus('bad', t('status.bad'));
 }
 
 function setModelStatus(kind, text) {
@@ -162,7 +213,7 @@ async function startLive() {
     live.mic.gain.gain.value = $('monitor').checked ? 1 : 0;
     state.live = live;
     try { live.wake = await navigator.wakeLock?.request('screen'); } catch { /* optional */ }
-    btn.textContent = '停止';
+    btn.textContent = t('btn.stop');
     btn.dataset.on = '1';
     $('liveHint').hidden = true;
     requestAnimationFrame(() => drawLive(live));
@@ -176,10 +227,10 @@ async function startLive() {
 }
 
 function micErrorText(err) {
-  if (!window.isSecureContext) return '麥克風只能在 https:// 或 localhost 網址使用。';
-  if (err && err.name === 'NotAllowedError') return '麥克風權限被拒絕了。請在瀏覽器網址列旁的設定裡允許麥克風，再按一次開始。';
-  if (err && err.name === 'NotFoundError') return '找不到麥克風裝置。';
-  return `無法開啟麥克風：${err && err.message}`;
+  if (!window.isSecureContext) return t('mic.https');
+  if (err && err.name === 'NotAllowedError') return t('mic.denied');
+  if (err && err.name === 'NotFoundError') return t('mic.notfound');
+  return t('mic.other', { msg: err && err.message });
 }
 
 async function pump(live) {
@@ -233,7 +284,7 @@ async function stopLive() {
   state.live = null;
   try { await live.wake?.release(); } catch { /* ignore */ }
   await live.mic.close();
-  $('liveBtn').textContent = '開始';
+  $('liveBtn').textContent = t('btn.start');
   delete $('liveBtn').dataset.on;
 }
 
@@ -244,7 +295,7 @@ async function loadSample(id) {
   const [noisy, clean] = await Promise.all(
     ['noisy', 'clean'].map(async (k) => decodeToRate(await (await fetch(`samples/${id}_${k}.wav`)).arrayBuffer(), sr)),
   );
-  state.source = { name: id, label: `${meta.label}（SNR ${meta.detail}）`, x: noisy, clean, sr };
+  state.source = { name: id, sampleId: id, detail: meta.detail, x: noisy, clean, sr };
   markSource(id);
   await runCompare();
 }
@@ -270,16 +321,16 @@ async function record(seconds = 5) {
     return;
   }
   btn.disabled = true;
-  for (let t = seconds; t > 0; t--) {
-    btn.textContent = `錄音中… ${t}`;
+  for (let sec = seconds; sec > 0; sec--) {
+    btn.textContent = t('btn.recording', { t: sec });
     await new Promise((r) => setTimeout(r, 1000));
   }
   await mic.close();
-  btn.textContent = '錄 5 秒';
+  btn.textContent = t('cmp.rec');
   btn.disabled = false;
   const x = new Float32Array(chunks.length * chunks[0].length);
   chunks.forEach((c, i) => x.set(c, i * c.length));
-  state.source = { name: 'my_recording', label: '我的錄音', x, sr };
+  state.source = { name: 'my_recording', labelKey: 'src.mine', x, sr };
   markSource(null);
   await runCompare();
 }
@@ -296,7 +347,7 @@ async function runCompare() {
   const meta = state.meta;
   const sr = meta.sr;
   $('compareMsg').textContent = '';
-  $('srcLabel').textContent = src.label;
+  $('srcLabel').textContent = sourceLabel(src);
   try {
     const x = await resampleTo(src.x, src.sr, sr);
     const enh = new Enhancer(state.session, meta);
@@ -318,8 +369,8 @@ async function runCompare() {
     $('progress').value = 1;
     const out = y.slice(hop, hop + x.length);
     const audioMs = (x.length / sr) * 1000;
-    $('offlineStats').textContent =
-      `${(audioMs / 1000).toFixed(1)} 秒的聲音，切成 ${frames} 幀逐幀處理，總運算 ${compute.toFixed(0)} ms，RTF = ${(compute / audioMs).toFixed(3)}`;
+    state.offline = { sec: (audioMs / 1000).toFixed(1), frames, ms: compute.toFixed(0), rtf: (compute / audioMs).toFixed(3) };
+    $('offlineStats').textContent = t('offline.stats', state.offline);
     showSpeed(compute / frames);
     state.result = { noisy: x, enhanced: out, clean: src.clean ? await resampleTo(src.clean, src.sr, sr) : null, sr };
     const maxHz = Math.min(src.sr, sr) / 2;
@@ -335,7 +386,7 @@ async function runCompare() {
     a.href = URL.createObjectURL(encodeWav(out, sr));
     a.download = `${src.name}_${meta.id}_enhanced.wav`;
   } catch (err) {
-    $('compareMsg').textContent = `處理失敗：${err.message}`;
+    $('compareMsg').textContent = t('cmp.fail', { msg: err.message });
     console.error(err);
   } finally {
     state.busy = false;
@@ -368,7 +419,7 @@ function startPlayback() {
   const first = play.nodes.noisy.s;
   play.src = first;
   first.onended = () => { if (play.src === first) stopPlayback(); };
-  $('playBtn').textContent = '停止';
+  $('playBtn').textContent = t('btn.stop');
   $('playBtn').dataset.on = '1';
 }
 
@@ -376,7 +427,7 @@ function stopPlayback() {
   if (play.nodes) for (const { s } of Object.values(play.nodes)) { try { s.stop(); } catch { /* already stopped */ } }
   play.nodes = null;
   play.src = null;
-  $('playBtn').textContent = '播放';
+  $('playBtn').textContent = t('btn.play');
   delete $('playBtn').dataset.on;
 }
 
@@ -397,23 +448,19 @@ function selectTab(name) {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  document.querySelectorAll('[role=tab]').forEach((t) => t.addEventListener('click', () => selectTab(t.dataset.tab)));
+  applyI18n();
+  document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang)));
+  window.addEventListener('langchange', refreshLanguage);
+  $('liveBtn').textContent = t('btn.start');
+  $('playBtn').textContent = t('btn.play');
+  $('recBtn').textContent = t('cmp.rec');
+  document.querySelectorAll('[role=tab]').forEach((tab) => tab.addEventListener('click', () => selectTab(tab.dataset.tab)));
   $('liveBtn').addEventListener('click', () => (state.live ? stopLive() : startLive()));
   // AEC is a microphone setting, so changing it reopens the microphone.
   $('aec').addEventListener('change', async () => { if (state.live) { await stopLive(); await startLive(); } });
   $('monitor').addEventListener('change', (e) => { if (state.live) state.live.mic.gain.gain.value = e.target.checked ? 1 : 0; });
   $('strength').addEventListener('input', (e) => { $('strengthVal').textContent = `${e.target.value}%`; });
-  const chips = $('samples');
-  for (const s of SAMPLES) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'chip';
-    b.dataset.sample = s.id;
-    b.setAttribute('aria-pressed', 'false');
-    b.innerHTML = `<span>${s.label}</span><small>SNR ${s.detail}</small>`;
-    b.addEventListener('click', () => loadSample(s.id));
-    chips.appendChild(b);
-  }
+  buildSampleChips();
   $('fileIn').addEventListener('change', (e) => e.target.files[0] && loadFile(e.target.files[0]));
   $('recBtn').addEventListener('click', () => record(5));
   $('playBtn').addEventListener('click', () => (play.nodes ? stopPlayback() : startPlayback()));
@@ -422,7 +469,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadModels();
     await loadSample('cafe');
   } catch (err) {
-    setModelStatus('bad', `初始化失敗：${err.message}`);
+    setModelStatus('bad', t('status.initFail', { msg: err.message }));
     console.error(err);
   }
 });

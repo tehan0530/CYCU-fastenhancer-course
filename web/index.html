@@ -144,73 +144,77 @@ a.button { display: inline-flex; align-items: center; min-height: 40px; padding:
 
 footer { padding-block: 24px 40px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); margin-top: 24px; }
 footer p { margin: 4px 0; max-width: 80ch; }
+.toprow { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.langs { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.langs button { border: 0; border-radius: 0; min-height: 32px; padding: 2px 12px; background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 700; }
+.langs button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">串流神經語音增強 · 手作課</div>
-    <h1>FastEnhancer <span class="wave">降噪實驗室</span></h1>
-    <p class="lede">模型直接在你的手機或筆電上執行，聲音不會上傳到任何伺服器。每次只處理十幾毫秒的聲音，所以可以一邊講一邊降噪。</p>
+    <div class="toprow"><div class="eyebrow" data-i18n="eyebrow">串流神經語音增強 · 手作課</div><div class="langs" role="group" aria-label="Language / 語言"><button type="button" data-lang="zh" aria-pressed="true">中文</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></div>
+    <h1>FastEnhancer <span class="wave" data-i18n="title.lab">降噪實驗室</span></h1>
+    <p class="lede" data-i18n="lede">模型直接在你的手機或筆電上執行，聲音不會上傳到任何伺服器。每次只處理十幾毫秒的聲音，所以可以一邊講一邊降噪。</p>
   </header>
 
-  <section class="modelbar" aria-label="模型">
+  <section class="modelbar" aria-label="模型" data-i18n-aria="model.aria">
     <div class="modelrow">
-      <label class="field" for="model">模型 <select id="model"></select></label>
+      <label class="field" for="model"><span data-i18n="model.label">模型</span> <select id="model"></select></label>
       <span id="speedChip" class="chip-status" data-kind="loading">載入中…</span>
     </div>
     <div class="speed">
-      <span>每 <b class="num" id="frameLen">–</b> ms 的聲音，運算 <b class="num" id="msPerFrame">–</b> ms</span>
+      <span data-i18n-html="speed.line">每 <b class="num" id="frameLen">–</b> ms 的聲音，運算 <b class="num" id="msPerFrame">–</b> ms</span>
       <span>RTF <b class="num" id="rtf">–</b></span>
     </div>
     <div id="modelInfo"></div>
   </section>
 
   <div class="tabs" role="tablist">
-    <button role="tab" id="tab-compare" data-tab="compare" aria-selected="true" aria-controls="panel-compare">範例與錄音比較</button>
-    <button role="tab" id="tab-live" data-tab="live" aria-selected="false" aria-controls="panel-live">即時麥克風</button>
+    <button role="tab" id="tab-compare" data-tab="compare" aria-selected="true" aria-controls="panel-compare" data-i18n="tab.compare">範例與錄音比較</button>
+    <button role="tab" id="tab-live" data-tab="live" aria-selected="false" aria-controls="panel-live" data-i18n="tab.live">即時麥克風</button>
   </div>
 
   <section role="tabpanel" id="panel-compare" aria-labelledby="tab-compare">
     <div class="panel">
       <div class="controls">
-        <h2>1. 選一段聲音</h2>
+        <h2 data-i18n="cmp.step1">1. 選一段聲音</h2>
         <div class="chips" id="samples"></div>
         <div class="or">
           <button type="button" id="recBtn">錄 5 秒</button>
-          <input type="file" id="fileIn" accept="audio/*" aria-label="上傳音檔">
+          <input type="file" id="fileIn" accept="audio/*" aria-label="上傳音檔" data-i18n-aria="cmp.upload">
         </div>
-        <p class="note">範例：英文語音混入真實環境噪音。SNR 越低越吵，0 dB 代表噪音和人聲一樣大聲。</p>
-        <h2>2. 切換著聽</h2>
+        <p class="note" data-i18n="cmp.note">範例：英文語音混入真實環境噪音。SNR 越低越吵，0 dB 代表噪音和人聲一樣大聲。</p>
+        <h2 data-i18n="cmp.step2">2. 切換著聽</h2>
         <div class="playrow">
           <button type="button" class="primary" id="playBtn">播放</button>
-          <div class="seg" role="group" aria-label="播放版本">
-            <button type="button" data-ab="noisy" aria-pressed="true">原始</button>
-            <button type="button" data-ab="enhanced" aria-pressed="false">降噪後</button>
-            <button type="button" data-ab="clean" id="abClean" aria-pressed="false">乾淨答案</button>
+          <div class="seg" role="group" aria-label="播放版本" data-i18n-aria="cmp.abAria">
+            <button type="button" data-ab="noisy" aria-pressed="true" data-i18n="ab.noisy">原始</button>
+            <button type="button" data-ab="enhanced" aria-pressed="false" data-i18n="ab.enhanced">降噪後</button>
+            <button type="button" data-ab="clean" id="abClean" aria-pressed="false" data-i18n="ab.clean">乾淨答案</button>
           </div>
         </div>
-        <p class="note">三個版本同步播放，按鈕只切換你聽到哪一個，可以邊播邊切。</p>
-        <a class="button" id="download" href="#">下載降噪後音檔</a>
+        <p class="note" data-i18n="cmp.abNote">三個版本同步播放，按鈕只切換你聽到哪一個，可以邊播邊切。</p>
+        <a class="button" id="download" href="#" data-i18n="cmp.download">下載降噪後音檔</a>
         <p class="alert" id="compareMsg" role="status"></p>
       </div>
       <div class="scopes" id="results" hidden>
         <progress id="progress" max="1" value="0"></progress>
         <p class="note" id="offlineStats"></p>
         <div class="scope">
-          <div class="scope-head"><span class="tag-noisy">原始（有噪音）· <span id="srcLabel"></span></span><small id="cmpAxis"></small></div>
+          <div class="scope-head"><span class="tag-noisy"><span data-i18n="scope.noisy">原始（有噪音）·</span> <span id="srcLabel"></span></span><small id="cmpAxis"></small></div>
           <canvas id="specNoisy" width="800" height="160"></canvas>
         </div>
         <div class="scope">
-          <div class="scope-head"><span class="tag-enh">降噪後</span></div>
+          <div class="scope-head"><span class="tag-enh" data-i18n="scope.enh">降噪後</span></div>
           <canvas id="specEnh" width="800" height="160"></canvas>
         </div>
         <div class="scope" id="cleanRow">
-          <div class="scope-head"><span class="tag-clean">乾淨答案（混噪音之前）</span></div>
+          <div class="scope-head"><span class="tag-clean" data-i18n="scope.clean">乾淨答案（混噪音之前）</span></div>
           <canvas id="specClean" width="800" height="160"></canvas>
         </div>
-        <p class="note">頻譜圖：橫軸是時間，縱軸是頻率（下低上高），越亮代表那個頻率越大聲。</p>
+        <p class="note" data-i18n="scope.note">頻譜圖：橫軸是時間，縱軸是頻率（下低上高），越亮代表那個頻率越大聲。</p>
       </div>
     </div>
   </section>
@@ -220,42 +224,43 @@ footer p { margin: 4px 0; max-width: 80ch; }
       <div class="controls">
         <button type="button" class="primary" id="liveBtn">開始</button>
         <p class="alert" id="liveHint" hidden></p>
-        <label class="toggle" for="enhOn">降噪 <input type="checkbox" id="enhOn" checked></label>
+        <label class="toggle" for="enhOn"><span data-i18n="live.enh">降噪</span> <input type="checkbox" id="enhOn" checked></label>
         <div class="range">
-          <label class="toggle" for="strength">降噪強度 <span class="num" id="strengthVal">100%</span></label>
+          <label class="toggle" for="strength"><span data-i18n="live.strength">降噪強度</span> <span class="num" id="strengthVal">100%</span></label>
           <input type="range" id="strength" min="0" max="100" value="100">
         </div>
-        <label class="toggle" for="monitor">從喇叭播出 <input type="checkbox" id="monitor"></label>
-        <label class="toggle" for="aec">瀏覽器回音消除（AEC） <input type="checkbox" id="aec"></label>
-        <p class="note">沒戴耳機時打開喇叭，麥克風會收到自己播出的聲音而產生回授。可以試著打開回音消除；或看下面的頻譜圖就好，或改用「錄 5 秒」。回音消除預設關閉，這樣聽到的差異都來自 FastEnhancer。</p>
+        <label class="toggle" for="monitor"><span data-i18n="live.monitor">從喇叭播出</span> <input type="checkbox" id="monitor"></label>
+        <label class="toggle" for="aec"><span data-i18n="live.aec">瀏覽器回音消除（AEC）</span> <input type="checkbox" id="aec"></label>
+        <p class="note" data-i18n="live.note">沒戴耳機時打開喇叭，麥克風會收到自己播出的聲音而產生回授。可以試著打開回音消除；或看下面的頻譜圖就好，或改用「錄 5 秒」。回音消除預設關閉，這樣聽到的差異都來自 FastEnhancer。</p>
       </div>
       <div class="scopes">
         <div class="scope">
-          <div class="scope-head"><span class="tag-noisy">麥克風收到的</span><small id="liveAxis"></small></div>
+          <div class="scope-head"><span class="tag-noisy" data-i18n="live.in">麥克風收到的</span><small id="liveAxis"></small></div>
           <canvas id="liveIn" width="800" height="160"></canvas>
         </div>
         <div class="scope">
-          <div class="scope-head"><span class="tag-enh">降噪後</span></div>
+          <div class="scope-head"><span class="tag-enh" data-i18n="scope.enh">降噪後</span></div>
           <canvas id="liveOut" width="800" height="160"></canvas>
         </div>
         <div class="stats">
-          <div class="stat"><span>模型延遲（2 幀）</span><b id="latAlgo">–</b> ms</div>
-          <div class="stat"><span>緩衝</span><b id="latBuf">–</b> ms</div>
-          <div class="stat"><span>裝置音訊</span><b id="latDev">–</b> ms</div>
-          <div class="stat"><span>估計總延遲</span><b id="latTotal">–</b> ms</div>
-          <div class="stat"><span>斷音次數</span><b id="glitches">0</b></div>
+          <div class="stat"><span data-i18n="stat.algo">模型延遲（2 幀）</span><b id="latAlgo">–</b> ms</div>
+          <div class="stat"><span data-i18n="stat.buf">緩衝</span><b id="latBuf">–</b> ms</div>
+          <div class="stat"><span data-i18n="stat.dev">裝置音訊</span><b id="latDev">–</b> ms</div>
+          <div class="stat"><span data-i18n="stat.total">估計總延遲</span><b id="latTotal">–</b> ms</div>
+          <div class="stat"><span data-i18n="stat.glitch">斷音次數</span><b id="glitches">0</b></div>
         </div>
-        <p class="note">試試看：拍手、敲鍵盤、開風扇、放音樂、兩個人同時講話。哪些噪音消得掉？哪些消不掉？</p>
+        <p class="note" data-i18n="live.try">試試看：拍手、敲鍵盤、開風扇、放音樂、兩個人同時講話。哪些噪音消得掉？哪些消不掉？</p>
       </div>
     </div>
   </section>
 
   <footer>
-    <p>模型：<a href="https://github.com/aask1357/fastenhancer" target="_blank" rel="noopener">FastEnhancer</a>（Ahn et al., 2025, MIT License）官方 ONNX 權重，以 <a href="https://onnxruntime.ai/" target="_blank" rel="noopener">ONNX Runtime Web</a> 在瀏覽器執行。</p>
-    <p>範例音檔：VCTK / VoiceBank 語音（CC BY 4.0）混合 DEMAND 環境噪音（CC BY-SA 3.0）。</p>
+    <p data-i18n-html="foot.model">模型：<a href="https://github.com/aask1357/fastenhancer" target="_blank" rel="noopener">FastEnhancer</a>（Ahn et al., 2025, MIT License）官方 ONNX 權重，以 <a href="https://onnxruntime.ai/" target="_blank" rel="noopener">ONNX Runtime Web</a> 在瀏覽器執行。</p>
+    <p data-i18n="foot.data">範例音檔：VCTK / VoiceBank 語音（CC BY 4.0）混合 DEMAND 環境噪音（CC BY-SA 3.0）。</p>
   </footer>
 </div>
 <script src="ort/ort.wasm.min.js"></script>
+<script src="i18n.js"></script>
 <script src="dsp.js"></script>
 <script src="app.js"></script>
 </body>
